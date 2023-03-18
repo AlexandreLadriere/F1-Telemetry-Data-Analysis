@@ -1,6 +1,6 @@
 import fastf1
 import fastf1.plotting
-import typing
+import numpy as np
 
 from matplotlib import pyplot as plt
 fastf1.plotting.setup_mpl()
@@ -18,9 +18,10 @@ class BasicTelemetry:
         car_data = fastf1.core.Telemetry(lap.get_car_data().add_distance())
         pilot_color = fastf1.plotting.driver_color(pilot)
         fig = self.__plot_data(fig, car_data, pilot_color, pilot)
-
         fig = self.__set_labels(fig)
+        
         plt.suptitle('Basic Telemtry Data\n' + lap_name)
+        fig = self.__plot_sectors(fig, lap)
         plt.show()
         return
     
@@ -39,8 +40,29 @@ class BasicTelemetry:
             fig = self.__plot_data(fig, car_data, pilot_color, pilots[i])
         fig = self.__set_labels(fig)
         plt.suptitle('Basic Telemtry Data\n' + lap_name)
+        fig = self.__plot_sectors(fig, laps[0])
         plt.show()
         return
+    
+    def __get_sectors_position(self, lap: fastf1.core.Lap):
+        # Faire objet à part
+        lap_telemetry = lap.get_car_data().add_distance()
+        sector12 = lap_telemetry['Distance'].iloc[np.argmin(abs(lap_telemetry['SessionTime'] - lap['Sector1SessionTime']))]
+        sector23 = lap_telemetry['Distance'].iloc[np.argmin(abs(lap_telemetry['SessionTime'] - lap['Sector2SessionTime']))]
+        return sector12, sector23
+
+    def __plot_sectors(self, fig: plt.Figure, lap: fastf1.core.Lap):
+        '''Plot sectors position for each axes on the given graph
+
+        Keyword arguments:
+        fig - The graph on which you want to plot sectors position
+        lap - The lap for which you want to get the sectors position
+        '''
+        sectors = self.__get_sectors_position(lap)
+        for axe in fig.axes:
+            axe.axvline(sectors[0], color='y', linestyle = 'dotted') # mettre variable pour couleur secteur
+            axe.axvline(sectors[1], color='y', linestyle = 'dotted')
+        return fig
     
     def __init_graph(self):
         """Initialize the graph grid and ratios

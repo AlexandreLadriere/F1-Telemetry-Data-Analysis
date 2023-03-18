@@ -1,5 +1,6 @@
 import fastf1
 import fastf1.plotting
+import numpy as np
 from BasicTelemetry import BasicTelemetry
 
 fastf1.Cache.enable_cache('./cache')
@@ -15,3 +16,4 @@ fast_sainz = session.laps.pick_driver('SAI').pick_fastest()
 BT = BasicTelemetry()
 #BT.plot(lap=fast_leclerc, pilot='LEC', lap_name=session.event['EventName'] + ' - ' + str(session.event.year) + ' - ' + 'Qualifying')
 BT.plot_comparison(laps=[fast_leclerc, fast_sainz], pilots=['LEC', 'SAI'], lap_name=session.event['EventName'] + ' - ' + str(session.event.year) + ' - ' + 'Qualifying')
+
