@@ -1,11 +1,18 @@
 import fastf1
 import fastf1.plotting
 import numpy as np
+import Utils
 
 from matplotlib import pyplot as plt
+import matplotlib.patches as mpatches
 fastf1.plotting.setup_mpl()
 
 class BasicTelemetry:
+    __SECTOR_COLOR = 'y'
+    __SECTOR_ALPHA = 0.8
+    __DISTANCE_MAX = 0
+    __pilot_patch = []
+
     def plot(self, lap: fastf1.core.Lap, pilot: str, lap_name: str):
         """Plot basic telemetry data (Speed, RPM, Gear, Throttle, Break) for the given pilot on the given lap
 
@@ -18,8 +25,8 @@ class BasicTelemetry:
         car_data = fastf1.core.Telemetry(lap.get_car_data().add_distance())
         pilot_color = fastf1.plotting.driver_color(pilot)
         fig = self.__plot_data(fig, car_data, pilot_color, pilot)
+        self.__pilot_patch.append(self.__get_pilot_patch(pilot=pilot, pilot_color=pilot_color, pilot_time=Utils.get_str_lap_time_from_lap(lap)))
         fig = self.__set_labels(fig)
-        
         plt.suptitle('Basic Telemtry Data\n' + lap_name)
         fig = self.__plot_sectors(fig, lap)
         plt.show()
@@ -38,6 +45,7 @@ class BasicTelemetry:
             car_data = fastf1.core.Telemetry(laps[i].get_car_data().add_distance())
             pilot_color = fastf1.plotting.driver_color(pilots[i])
             fig = self.__plot_data(fig, car_data, pilot_color, pilots[i])
+            self.__pilot_patch.append(self.__get_pilot_patch(pilot=pilots[i], pilot_color=pilot_color, pilot_time=Utils.get_str_lap_time_from_lap(laps[i])))
         fig = self.__set_labels(fig)
         plt.suptitle('Basic Telemtry Data\n' + lap_name)
         fig = self.__plot_sectors(fig, laps[0])
@@ -45,7 +53,11 @@ class BasicTelemetry:
         return
     
     def __get_sectors_position(self, lap: fastf1.core.Lap):
-        # Faire objet à part
+        '''Get position (in meters) for each sector limit
+
+        Keyword arguments:
+        lap - The lap for which you want to get the sectors position
+        '''
         lap_telemetry = lap.get_car_data().add_distance()
         sector12 = lap_telemetry['Distance'].iloc[np.argmin(abs(lap_telemetry['SessionTime'] - lap['Sector1SessionTime']))]
         sector23 = lap_telemetry['Distance'].iloc[np.argmin(abs(lap_telemetry['SessionTime'] - lap['Sector2SessionTime']))]
@@ -56,12 +68,18 @@ class BasicTelemetry:
 
         Keyword arguments:
         fig - The graph on which you want to plot sectors position
-        lap - The lap for which you want to get the sectors position
+        lap - The lap for which you want to plot the sectors
         '''
         sectors = self.__get_sectors_position(lap)
         for axe in fig.axes:
-            axe.axvline(sectors[0], color='y', linestyle = 'dotted') # mettre variable pour couleur secteur
-            axe.axvline(sectors[1], color='y', linestyle = 'dotted')
+            axe.axvline(0, color=self.__SECTOR_COLOR, linestyle = 'dotted', alpha = self.__SECTOR_ALPHA)
+            axe.axvline(sectors[0], color=self.__SECTOR_COLOR, linestyle = 'dotted', alpha = self.__SECTOR_ALPHA)
+            axe.axvline(sectors[1], color=self.__SECTOR_COLOR, linestyle = 'dotted', alpha = self.__SECTOR_ALPHA)
+            axe.axvline(self.__DISTANCE_MAX, color=self.__SECTOR_COLOR, linestyle = 'dotted', alpha = self.__SECTOR_ALPHA)
+        y_lim = fig.axes[0].get_ylim()[1]
+        fig.axes[0].text(0, y_lim, 'Sector 1', color=self.__SECTOR_COLOR, alpha = self.__SECTOR_ALPHA)
+        fig.axes[0].text(sectors[0], y_lim, 'Sector 2', color=self.__SECTOR_COLOR, alpha = self.__SECTOR_ALPHA)
+        fig.axes[0].text(sectors[1], y_lim, 'Sector 3', color=self.__SECTOR_COLOR, alpha = self.__SECTOR_ALPHA)
         return fig
     
     def __init_graph(self):
@@ -91,6 +109,7 @@ class BasicTelemetry:
         fig.axes[2].set_ylabel('Gear')
         fig.axes[3].set_ylabel('Throttle [%]')
         fig.axes[4].set_ylabel('Brake')
+        fig.axes[0].legend(handles=self.__pilot_patch)
         return fig
 
     def __plot_data(self, fig: plt.Figure, car_data: fastf1.core.Telemetry, pilot_color: str, pilot: str):
@@ -103,11 +122,23 @@ class BasicTelemetry:
         pilot       -- Name or label of the pilot
         """
         x = car_data['Distance']
+        self.__DISTANCE_MAX = car_data['Distance'].iloc[-1]
         fig.axes[0].plot(x, car_data['Speed'], color = pilot_color, label=pilot)
         fig.axes[1].plot(x, car_data['RPM'], color = pilot_color, label=pilot)
         fig.axes[2].plot(x, car_data['nGear'], color = pilot_color, label=pilot)
         fig.axes[3].plot(x, car_data['Throttle'], color = pilot_color, label=pilot)
         fig.axes[4].plot(x, car_data['Brake'], color = pilot_color, label=pilot)
-        fig.axes[0].legend()
         return fig
+
+    def __get_pilot_patch(self, pilot: str, pilot_color: str, pilot_time: str):
+        """Build mpatches.Patch object for the figure legend
+
+        Keywords arguments:
+        pilot       - Name of the pilot
+        pilot_color - color of the pilot
+        pilot_time  - pilot time (m:s:ms)
+        """
+        pilot_patch = mpatches.Patch(color=pilot_color, label=pilot + ' - ' + pilot_time)
+        return pilot_patch
+
 
