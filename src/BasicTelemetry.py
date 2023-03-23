@@ -1,6 +1,5 @@
 import fastf1
 import fastf1.plotting
-import numpy as np
 import Utils
 
 from matplotlib import pyplot as plt
@@ -55,17 +54,6 @@ class BasicTelemetry:
         plt.show()
         self.__pilot_patch = []
         return
-    
-    def __get_sectors_position(self, lap: fastf1.core.Lap):
-        '''Get position (in meters) for each sector limit
-
-        Keyword arguments:
-        lap - The lap for which you want to get the sectors position
-        '''
-        lap_telemetry = lap.get_car_data().add_distance()
-        sector12 = lap_telemetry['Distance'].iloc[np.argmin(abs(lap_telemetry['SessionTime'] - lap['Sector1SessionTime']))]
-        sector23 = lap_telemetry['Distance'].iloc[np.argmin(abs(lap_telemetry['SessionTime'] - lap['Sector2SessionTime']))]
-        return sector12, sector23
 
     def __plot_sectors(self, fig: plt.Figure, lap: fastf1.core.Lap):
         '''Plot sectors position for each axes on the given graph
@@ -74,7 +62,7 @@ class BasicTelemetry:
         fig - The graph on which you want to plot sectors position
         lap - The lap for which you want to plot the sectors
         '''
-        sectors = self.__get_sectors_position(lap)
+        sectors = Utils.get_sectors_position(lap)
         for axe in fig.axes:
             axe.axvline(0, color=self.__SECTOR_COLOR, linestyle = 'dotted', alpha = self.__SECTOR_ALPHA)
             axe.axvline(sectors[0], color=self.__SECTOR_COLOR, linestyle = 'dotted', alpha = self.__SECTOR_ALPHA)
