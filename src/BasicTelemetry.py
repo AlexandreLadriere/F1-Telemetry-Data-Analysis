@@ -56,12 +56,12 @@ class BasicTelemetry:
         return
 
     def __plot_sectors(self, fig: plt.Figure, lap: fastf1.core.Lap):
-        '''Plot sectors position for each axes on the given graph
+        """Plot sectors position for each axes on the given graph
 
         Keyword arguments:
         fig - The graph on which you want to plot sectors position
         lap - The lap for which you want to plot the sectors
-        '''
+        """
         sectors = Utils.get_sectors_position(lap)
         for axe in fig.axes:
             axe.axvline(0, color=self.__SECTOR_COLOR, linestyle = 'dotted', alpha = self.__SECTOR_ALPHA)
