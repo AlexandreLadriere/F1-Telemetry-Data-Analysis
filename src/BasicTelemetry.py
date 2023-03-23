@@ -25,11 +25,13 @@ class BasicTelemetry:
         car_data = fastf1.core.Telemetry(lap.get_car_data().add_distance())
         pilot_color = fastf1.plotting.driver_color(pilot)
         fig = self.__plot_data(fig, car_data, pilot_color, pilot)
+        fig = self.__plot_max_speed(fig, car_data, pilot_color)
         self.__pilot_patch.append(self.__get_pilot_patch(pilot=pilot, pilot_color=pilot_color, pilot_time=Utils.get_str_lap_time_from_lap(lap)))
         fig = self.__set_labels(fig)
         plt.suptitle('Basic Telemtry Data\n' + lap_name)
         fig = self.__plot_sectors(fig, lap)
         plt.show()
+        self.__pilot_patch = []
         return
     
     def plot_comparison(self, laps: list[fastf1.core.Lap], pilots: list[str], lap_name: str):
@@ -45,11 +47,13 @@ class BasicTelemetry:
             car_data = fastf1.core.Telemetry(laps[i].get_car_data().add_distance())
             pilot_color = fastf1.plotting.driver_color(pilots[i])
             fig = self.__plot_data(fig, car_data, pilot_color, pilots[i])
+            fig = self.__plot_max_speed(fig, car_data, pilot_color)
             self.__pilot_patch.append(self.__get_pilot_patch(pilot=pilots[i], pilot_color=pilot_color, pilot_time=Utils.get_str_lap_time_from_lap(laps[i])))
         fig = self.__set_labels(fig)
         plt.suptitle('Basic Telemtry Data\n' + lap_name)
         fig = self.__plot_sectors(fig, laps[0])
         plt.show()
+        self.__pilot_patch = []
         return
     
     def __get_sectors_position(self, lap: fastf1.core.Lap):
@@ -129,6 +133,18 @@ class BasicTelemetry:
         fig.axes[3].plot(x, car_data['Throttle'], color = pilot_color, label=pilot)
         fig.axes[4].plot(x, car_data['Brake'], color = pilot_color, label=pilot)
         return fig
+    
+    def __plot_max_speed(self, fig: plt.Figure, car_data: fastf1.core.Telemetry, pilot_color: str):
+        """Plot max speed on the SPEED subplot
+
+        Keywords arguments:
+        fig         -- Graph on which you want to plot data
+        car_data    -- Telemetry data of a car on one lap
+        pilot_color -- Graph color of the pilot
+        """
+        (xmax, ymax) = self.__get_max_speed_coordinates(car_data)
+        fig.axes[0].plot(xmax, ymax, marker="o", markersize=3, markeredgecolor="red", markerfacecolor=pilot_color)
+        return fig
 
     def __get_pilot_patch(self, pilot: str, pilot_color: str, pilot_time: str):
         """Build mpatches.Patch object for the figure legend
@@ -138,7 +154,17 @@ class BasicTelemetry:
         pilot_color - color of the pilot
         pilot_time  - pilot time (m:s:ms)
         """
-        pilot_patch = mpatches.Patch(color=pilot_color, label=pilot + ' - ' + pilot_time)
+        pilot_patch = mpatches.Patch(color=pilot_color, label=pilot + ' - ' + pilot_time, clip_on=False)
         return pilot_patch
 
+    def __get_max_speed_coordinates(self, car_data: fastf1.core.Telemetry):
+        """Get the max speed coordinates (max_speed, max_speed_distance)
+
+        Keywords arguments:
+        car_data    - Car data of the lap from which you want to get the max speeed coordinates by distance
+        """
+        max_speed = car_data['Speed'].max()
+        max_speed_index = car_data['Speed'].idxmax()
+        distance_for_max_speed = car_data['Distance'][max_speed_index]
+        return (distance_for_max_speed, max_speed)
 
