@@ -2,6 +2,7 @@ import fastf1
 import fastf1.plotting
 import numpy as np
 from BasicTelemetry import BasicTelemetry
+from LapDominance import LapDominance
 
 fastf1.Cache.enable_cache('./cache')
 
@@ -14,6 +15,9 @@ fast_sainz = session.laps.pick_driver('SAI').pick_fastest()
 # need to plot sector limit and all turns
 
 BT = BasicTelemetry()
-BT.plot(lap=fast_leclerc, pilot='LEC', lap_name=session.event['EventName'] + ' - ' + str(session.event.year) + ' - ' + 'Qualifying')
-BT.plot_comparison(laps=[fast_perez, fast_gasly], pilots=['PER', 'GAS'], lap_name=session.event['EventName'] + ' - ' + str(session.event.year) + ' - ' + 'Qualifying')
+#BT.plot(lap=fast_leclerc, pilot='LEC', lap_name=session.event['EventName'] + ' - ' + str(session.event.year) + ' - ' + 'Qualifying')
+#BT.plot_comparison(laps=[fast_perez, fast_gasly], pilots=['PER', 'GAS'], lap_name=session.event['EventName'] + ' - ' + str(session.event.year) + ' - ' + 'Qualifying')
+
+LD = LapDominance()
+LD.plot(session)
 
