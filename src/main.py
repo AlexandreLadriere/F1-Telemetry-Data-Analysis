@@ -12,7 +12,6 @@ fast_perez = session.laps.pick_driver('PER').pick_fastest()
 fast_leclerc = session.laps.pick_driver('LEC').pick_fastest()
 fast_gasly = session.laps.pick_driver('GAS').pick_fastest()
 fast_sainz = session.laps.pick_driver('SAI').pick_fastest()
-# need to plot sector limit and all turns
 
 BT = BasicTelemetry()
 #BT.plot(lap=fast_leclerc, pilot='LEC', lap_name=session.event['EventName'] + ' - ' + str(session.event.year) + ' - ' + 'Qualifying')
