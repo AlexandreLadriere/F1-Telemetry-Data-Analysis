@@ -10,32 +10,40 @@ from matplotlib.collections import LineCollection
 
 fastf1.plotting.setup_mpl()
 
-MINISECTORS = 50
+MINISECTORS = 20
 
 # see https://medium.com/towards-formula-1-analysis/analyzing-formula-1-data-using-python-2021-abu-dhabi-gp-minisector-comparison-3d72aa39e5e8
 
 class LapDominance:
     def plot(self, session: fastf1.core.Session):
+        """Plot the lap dominance by minisectors based on all pilots in the given session
+        
+        Keyword arguments:
+        session -- Session for wich you want to plot the lap dominance
+        """
+        ### Does not work correctly dur to inconsistency in position data for each driver of the given session
         session.load()
         drivers_fastest_laps = self.__get_drivers_fastest_lap(session)
         drivers_fastest_laps_telemetry = self.__get_telemetry_from_lap_list(drivers_fastest_laps)
         merged_telemetry = self.__merging_telemetry(drivers_fastest_laps_telemetry)
         merged_telemetry_with_minisectors = self.__create_minisectors(merged_telemetry)
         merged_telemetry_with_minisectors_and_fastest_driver = self.__get_fastest_driver_by_minisector(merged_telemetry_with_minisectors)
-        #self.plot_fastest_driver_by_minisector(merged_telemetry_with_minisectors_and_fastest_driver)
-        #must do same function with only two pilots
+        self.plot_fastest_driver_by_minisector(merged_telemetry_with_minisectors_and_fastest_driver)
         return 
     
-    def plot_test(self, session: fastf1.core.Session):
+    def plot_comparison(self, session: fastf1.core.Session, drivers: list[str]):
+        """Plot the lap dominance by minisectors based on all the given pilots
+        
+        Keyword arguments:
+        session -- Session for wich you want to plot the lap dominance
+        drivers -- List of all drivers name
+        """
         session.load()
-        d1 = session.laps.pick_driver('VER').pick_fastest()
-        d2 = session.laps.pick_driver('HAM').pick_fastest()
-        d_list = [d1, d2]
-        drivers_fastest_laps_telemetry = self.__get_telemetry_from_lap_list(d_list)
+        drivers_fastest_laps = self.__get_drivers_fastest_lap(session, drivers)
+        drivers_fastest_laps_telemetry = self.__get_telemetry_from_lap_list(drivers_fastest_laps)
         merged_telemetry = self.__merging_telemetry(drivers_fastest_laps_telemetry)
         merged_telemetry_with_minisectors = self.__create_minisectors(merged_telemetry)
         merged_telemetry_with_minisectors_and_fastest_driver = self.__get_fastest_driver_by_minisector(merged_telemetry_with_minisectors)
-        #print(merged_telemetry_with_minisectors)
         self.plot_fastest_driver_by_minisector(merged_telemetry_with_minisectors_and_fastest_driver)
         return
 
@@ -48,6 +56,19 @@ class LapDominance:
         drivers_fastest_lap = []
         drivers_numbers = session.drivers
         for driver in drivers_numbers:
+            fast_lap = session.laps.pick_driver(driver).pick_fastest()
+            drivers_fastest_lap.append(fast_lap)
+        return drivers_fastest_lap
+    
+    def __get_drivers_fastest_lap(self, session: fastf1.core.Session, drivers: list[str]):
+        """Get the fastest lap for each given pilot in the given session (list)
+
+        Keyword arguments:
+        session -- Session for wich you want to get all pilots fastest lap
+        drivers -- List of all drivers name
+        """
+        drivers_fastest_lap = []
+        for driver in drivers:
             fast_lap = session.laps.pick_driver(driver).pick_fastest()
             drivers_fastest_lap.append(fast_lap)
         return drivers_fastest_lap
