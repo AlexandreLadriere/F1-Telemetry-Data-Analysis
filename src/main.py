@@ -17,6 +17,10 @@ BT = BasicTelemetry()
 #BT.plot(lap=fast_leclerc, pilot='LEC', lap_name=session.event['EventName'] + ' - ' + str(session.event.year) + ' - ' + 'Qualifying')
 #BT.plot_comparison(laps=[fast_perez, fast_gasly], pilots=['PER', 'GAS'], lap_name=session.event['EventName'] + ' - ' + str(session.event.year) + ' - ' + 'Qualifying')
 
-LD = LapDominance()
-LD.plot(session)
+#LD = LapDominance()
+#LD.plot(session)
+
+LD_test = LapDominance()
+session = fastf1.get_session(2021, 'Abu Dhabi', 'Q')
+LD_test.plot_test(session)
 
