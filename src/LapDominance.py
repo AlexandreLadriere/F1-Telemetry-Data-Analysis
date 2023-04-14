@@ -14,6 +14,12 @@ MINISECTORS = 20
 
 # see https://medium.com/towards-formula-1-analysis/analyzing-formula-1-data-using-python-2021-abu-dhabi-gp-minisector-comparison-3d72aa39e5e8
 
+# TODO:
+# Add title
+# Use real pilot colors
+# Plot minisectors numbers/lines
+# Plot mean speed for each driver
+
 class LapDominance:
     def plot(self, session: fastf1.core.Session):
         """Plot the lap dominance by minisectors based on all pilots in the given session
@@ -161,6 +167,11 @@ class LapDominance:
         return telemetry
 
     def plot_fastest_driver_by_minisector(self, telemetry: fastf1.core.Telemetry):
+        """Plot circuit overlay, where each color represent the fastest pilot on the given miniseector
+
+        Keyword arguments:
+        telemetry   -- Telemetry data for which you want to plot LapDominance data
+        """
         fig, ax = plt.subplots(sharex=True, sharey=True)
         x = np.array(telemetry['X'].values)
         y = np.array(telemetry['Y'].values)
@@ -168,15 +179,39 @@ class LapDominance:
         points = np.array([x, y]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
         fastest_driver_array = telemetry['Fastest_driver_int'].to_numpy().astype(float)
-        cmap = cm.get_cmap('winter', 2)
+
+        unique_drivers = telemetry['Fastest_driver'].unique().tolist()
+
+        cmap = cm.get_cmap('winter', len(unique_drivers))
         lc_comp = LineCollection(segments, norm=plt.Normalize(1, cmap.N+1), cmap=cmap)
         lc_comp.set_array(fastest_driver_array)
         lc_comp.set_linewidth(1)
         plt.gca().add_collection(lc_comp)
         plt.axis('equal')
         plt.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
-        #cbar = plt.colorbar(mappable=lc_comp, boundaries=np.arange(1,4))
-        #cbar.set_ticks(np.arange(1.5, 4.5))
-
+        cbar = plt.colorbar(mappable=lc_comp, boundaries=np.arange(1, len(unique_drivers) + 2))
+        cbar.set_ticks(np.arange(1.5, len(unique_drivers) + 1.5))
+        self.__set_tick_label(telemetry, cbar)
         plt.show()
+        return
+    
+    def __set_tick_label(self, telemetry: fastf1.core.Telemetry, cbar: plt.colorbar):
+        """Set ticklabel for the given colorbar
+
+        Keyword arguments:
+        telemetry   -- telemetry dataframe from which you have to retrieve driver names
+        cbar        -- colorbar on which you want to set drivers names
+        """
+        # Get unique fastest drivers
+        unique_drivers = telemetry['Fastest_driver'].unique().tolist()
+        driver_dic = dict.fromkeys(unique_drivers, -1)
+        # Iterate through dataframe for each unique fastest driver to get unique_fastest_driver_int
+        for key in driver_dic:
+            tmp_index = (telemetry['Fastest_driver'].values == key).argmax()
+            driver_dic[key] = telemetry.iloc[tmp_index]['Fastest_driver_int']
+        # Sort the driver names by int
+        sorted_drivers_by_int = sorted(driver_dic.items(), key = lambda x:x[1])
+        # Get only drivers name in a list
+        drivers_label_sorted = list(map(lambda x: x[0], sorted_drivers_by_int))
+        cbar.set_ticklabels(drivers_label_sorted)
         return

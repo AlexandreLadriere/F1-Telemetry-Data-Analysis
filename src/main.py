@@ -19,5 +19,5 @@ BT = BasicTelemetry()
 
 LD = LapDominance()
 #LD.plot(session)
-LD.plot_comparison(session, ['MAG', 'ALO'])
+LD.plot_comparison(session, ['MAG', 'HAM', 'LEC', 'ALO'])
 
