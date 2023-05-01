@@ -6,7 +6,7 @@ from LapDominance import LapDominance
 
 fastf1.Cache.enable_cache('./cache')
 
-session = fastf1.get_session(2023, 'Jeddah', 'Q')
+session = fastf1.get_session(2023, 'Baku', 'Q')
 session.load()
 fast_perez = session.laps.pick_driver('PER').pick_fastest()
 fast_leclerc = session.laps.pick_driver('LEC').pick_fastest()
@@ -19,5 +19,5 @@ BT = BasicTelemetry()
 
 LD = LapDominance()
 #LD.plot(session)
-LD.plot_comparison(session, ['MAG', 'HAM', 'LEC', 'ALO'])
+LD.plot_comparison(session, ['LEC', 'VER', 'HAM'])
 

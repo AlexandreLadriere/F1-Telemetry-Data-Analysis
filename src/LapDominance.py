@@ -10,8 +10,6 @@ from matplotlib.collections import LineCollection
 
 fastf1.plotting.setup_mpl()
 
-MINISECTORS = 20
-
 # see https://medium.com/towards-formula-1-analysis/analyzing-formula-1-data-using-python-2021-abu-dhabi-gp-minisector-comparison-3d72aa39e5e8
 
 # TODO:
@@ -19,8 +17,13 @@ MINISECTORS = 20
 # Use real pilot colors
 # Plot minisectors numbers/lines
 # Plot mean speed for each driver
+# Cleean code
 
 class LapDominance:
+
+    __MINISECTORS = 20
+    __SESSION = None
+
     def plot(self, session: fastf1.core.Session):
         """Plot the lap dominance by minisectors based on all pilots in the given session
         
@@ -29,12 +32,13 @@ class LapDominance:
         """
         ### Does not work correctly dur to inconsistency in position data for each driver of the given session
         session.load()
+        self.__SESSION = session
         drivers_fastest_laps = self.__get_drivers_fastest_lap(session)
         drivers_fastest_laps_telemetry = self.__get_telemetry_from_lap_list(drivers_fastest_laps)
         merged_telemetry = self.__merging_telemetry(drivers_fastest_laps_telemetry)
         merged_telemetry_with_minisectors = self.__create_minisectors(merged_telemetry)
         merged_telemetry_with_minisectors_and_fastest_driver = self.__get_fastest_driver_by_minisector(merged_telemetry_with_minisectors)
-        self.plot_fastest_driver_by_minisector(merged_telemetry_with_minisectors_and_fastest_driver)
+        self.__plot_fastest_driver_by_minisector(merged_telemetry_with_minisectors_and_fastest_driver)
         return 
     
     def plot_comparison(self, session: fastf1.core.Session, drivers: list[str]):
@@ -45,12 +49,13 @@ class LapDominance:
         drivers -- List of all drivers name
         """
         session.load()
+        self.__SESSION = session
         drivers_fastest_laps = self.__get_drivers_fastest_lap(session, drivers)
         drivers_fastest_laps_telemetry = self.__get_telemetry_from_lap_list(drivers_fastest_laps)
         merged_telemetry = self.__merging_telemetry(drivers_fastest_laps_telemetry)
         merged_telemetry_with_minisectors = self.__create_minisectors(merged_telemetry)
         merged_telemetry_with_minisectors_and_fastest_driver = self.__get_fastest_driver_by_minisector(merged_telemetry_with_minisectors)
-        self.plot_fastest_driver_by_minisector(merged_telemetry_with_minisectors_and_fastest_driver)
+        self.__plot_fastest_driver_by_minisector(merged_telemetry_with_minisectors_and_fastest_driver)
         return
 
     def __get_drivers_fastest_lap(self, session: fastf1.core.Session):
@@ -113,10 +118,10 @@ class LapDominance:
         telemetry  -- Telemetry DataFrame for which you want to assign minisectors
         """
         total_distance = max(telemetry['Distance'])
-        minisector_length = total_distance / MINISECTORS
+        minisector_length = total_distance / self.__MINISECTORS
         minisectors = [0]
         #list of all the distance at which a minisector starts
-        for i in range(0, (MINISECTORS - 1)):
+        for i in range(0, (self.__MINISECTORS - 1)):
             minisectors.append(minisector_length * (i + 1))
         """
         #assign minisector for each row in telemetry dataframe
@@ -166,7 +171,7 @@ class LapDominance:
             telemetry.loc[telemetry['Fastest_driver'] == unique_fasest_driver[i], 'Fastest_driver_int'] = i + 1
         return telemetry
 
-    def plot_fastest_driver_by_minisector(self, telemetry: fastf1.core.Telemetry):
+    def __plot_fastest_driver_by_minisector(self, telemetry: fastf1.core.Telemetry):
         """Plot circuit overlay, where each color represent the fastest pilot on the given miniseector
 
         Keyword arguments:
@@ -191,7 +196,10 @@ class LapDominance:
         plt.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
         cbar = plt.colorbar(mappable=lc_comp, boundaries=np.arange(1, len(unique_drivers) + 2))
         cbar.set_ticks(np.arange(1.5, len(unique_drivers) + 1.5))
+        plt.grid(False)
+        plt.axis('off')
         self.__set_tick_label(telemetry, cbar)
+        self.__plot_title(self.__SESSION)
         plt.show()
         return
     
@@ -214,4 +222,16 @@ class LapDominance:
         # Get only drivers name in a list
         drivers_label_sorted = list(map(lambda x: x[0], sorted_drivers_by_int))
         cbar.set_ticklabels(drivers_label_sorted)
+        return
+    
+    def __plot_title(self, session: fastf1.core.Session):
+        """Set plot title
+        
+        Keyword arguments:
+        session -- Session for wich you want to plot the lap dominance
+        """
+        title = plt.suptitle(
+            f"Lap Dominance ({self.__MINISECTORS} mini sectors)\n"
+            f"{session.event['EventName']} {session.event.year} - {session.name}"
+        )
         return
