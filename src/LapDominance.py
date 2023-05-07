@@ -2,6 +2,7 @@ import fastf1
 import fastf1.plotting
 import pandas as pd
 import numpy as np
+import Utils
 
 
 from matplotlib import pyplot as plt
@@ -13,7 +14,6 @@ fastf1.plotting.setup_mpl()
 # see https://medium.com/towards-formula-1-analysis/analyzing-formula-1-data-using-python-2021-abu-dhabi-gp-minisector-comparison-3d72aa39e5e8
 
 # TODO:
-# Use real pilot colors
 # Plot minisectors numbers/lines
 # Plot mean speed for each driver
 # Clean code
@@ -32,7 +32,7 @@ class LapDominance:
         ### Does not work correctly dur to inconsistency in position data for each driver of the given session
         session.load()
         self.__SESSION = session
-        drivers_fastest_laps = self.__get_drivers_fastest_lap(session)
+        drivers_fastest_laps = Utils.get_fastest_laps(session)
         drivers_fastest_laps_telemetry = self.__get_telemetry_from_lap_list(drivers_fastest_laps)
         merged_telemetry = self.__merging_telemetry(drivers_fastest_laps_telemetry)
         merged_telemetry_with_minisectors = self.__create_minisectors(merged_telemetry)
@@ -49,39 +49,13 @@ class LapDominance:
         """
         session.load()
         self.__SESSION = session
-        drivers_fastest_laps = self.__get_drivers_fastest_lap(session, drivers)
+        drivers_fastest_laps = Utils.get_drivers_fastest_lap(session, drivers)
         drivers_fastest_laps_telemetry = self.__get_telemetry_from_lap_list(drivers_fastest_laps)
         merged_telemetry = self.__merging_telemetry(drivers_fastest_laps_telemetry)
         merged_telemetry_with_minisectors = self.__create_minisectors(merged_telemetry)
         merged_telemetry_with_minisectors_and_fastest_driver = self.__get_fastest_driver_by_minisector(merged_telemetry_with_minisectors)
         self.__plot_fastest_driver_by_minisector(merged_telemetry_with_minisectors_and_fastest_driver)
         return
-
-    def __get_drivers_fastest_lap(self, session: fastf1.core.Session):
-        """Get the fastest lap for each pilot in the given session (list)
-
-        Keyword arguments:
-        session -- Session for wich you want to get all pilots fastest lap
-        """
-        drivers_fastest_lap = []
-        drivers_numbers = session.drivers
-        for driver in drivers_numbers:
-            fast_lap = session.laps.pick_driver(driver).pick_fastest()
-            drivers_fastest_lap.append(fast_lap)
-        return drivers_fastest_lap
-    
-    def __get_drivers_fastest_lap(self, session: fastf1.core.Session, drivers: list[str]):
-        """Get the fastest lap for each given pilot in the given session (list)
-
-        Keyword arguments:
-        session -- Session for wich you want to get all pilots fastest lap
-        drivers -- List of all drivers name
-        """
-        drivers_fastest_lap = []
-        for driver in drivers:
-            fast_lap = session.laps.pick_driver(driver).pick_fastest()
-            drivers_fastest_lap.append(fast_lap)
-        return drivers_fastest_lap
     
     def __get_telemetry_from_lap_list(self, laps_list: list[fastf1.core.Lap]):
         """Get the telemetry for each lap in the given list
@@ -179,6 +153,7 @@ class LapDominance:
         fig, ax = plt.subplots(sharex=True, sharey=True)
         x = np.array(telemetry['X'].values)
         y = np.array(telemetry['Y'].values)
+        print(telemetry)
 
         points = np.array([x, y]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
@@ -186,14 +161,13 @@ class LapDominance:
 
         unique_drivers = telemetry['Fastest_driver'].unique().tolist()
 
-        cmap = (cm.colors.ListedColormap(self.__get_drivers_color(unique_drivers)).with_extremes(over='0.25', under='0.75'))
+        cmap = (cm.colors.ListedColormap(Utils.get_drivers_color(unique_drivers)).with_extremes(over='0.25', under='0.75'))
         lc_comp = LineCollection(segments, norm=plt.Normalize(1, cmap.N+1), cmap=cmap)
         lc_comp.set_array(fastest_driver_array)
         lc_comp.set_linewidth(1)
         plt.gca().add_collection(lc_comp)
         plt.axis('equal')
         plt.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
-        print(unique_drivers)
         cbar = plt.colorbar(mappable=lc_comp, boundaries=np.arange(1, len(unique_drivers) + 2))
         cbar.set_ticks(np.arange(1.5, len(unique_drivers) + 1.5))
         plt.grid(False)
@@ -202,17 +176,6 @@ class LapDominance:
         self.__plot_title(self.__SESSION)
         plt.show()
         return
-    
-    def __get_drivers_color(self, driver_list):
-        """Get a list of color for a given list of driver
-
-        Keyword arguments:
-        driver_list   -- List of drivers names
-        """
-        colors = []
-        for pilot in driver_list:
-            colors.append(fastf1.plotting.driver_color(pilot))
-        return colors
     
     def __set_tick_label(self, telemetry: fastf1.core.Telemetry, cbar: plt.colorbar):
         """Set ticklabel for the given colorbar

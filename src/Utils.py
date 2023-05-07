@@ -29,3 +29,40 @@ def get_sectors_position(lap: fastf1.core.Lap):
     sector12 = lap_telemetry['Distance'].iloc[np.argmin(abs(lap_telemetry['SessionTime'] - lap['Sector1SessionTime']))]
     sector23 = lap_telemetry['Distance'].iloc[np.argmin(abs(lap_telemetry['SessionTime'] - lap['Sector2SessionTime']))]
     return sector12, sector23
+
+def get_drivers_color(driver_list):
+    """Get a list of color for a given list of driver
+
+    Keyword arguments:
+    driver_list   -- List of drivers names
+    """
+    colors = []
+    for pilot in driver_list:
+        colors.append(fastf1.plotting.driver_color(pilot))
+    return colors
+
+def get_fastest_laps(session: fastf1.core.Session):
+    """Get the fastest lap for each pilot in the given session (list)
+
+    Keyword arguments:
+    session -- Session for wich you want to get all pilots fastest lap
+    """
+    drivers_fastest_lap = []
+    drivers_numbers = session.drivers
+    for driver in drivers_numbers:
+        fast_lap = session.laps.pick_driver(driver).pick_fastest()
+        drivers_fastest_lap.append(fast_lap)
+    return drivers_fastest_lap
+
+def get_drivers_fastest_lap(session: fastf1.core.Session, drivers: list[str]):
+    """Get the fastest lap for each given pilot in the given session (list)
+
+    Keyword arguments:
+    session -- Session for wich you want to get all pilots fastest lap
+    drivers -- List of all drivers name
+    """
+    drivers_fastest_lap = []
+    for driver in drivers:
+        fast_lap = session.laps.pick_driver(driver).pick_fastest()
+        drivers_fastest_lap.append(fast_lap)
+    return drivers_fastest_lap
