@@ -13,11 +13,10 @@ fastf1.plotting.setup_mpl()
 # see https://medium.com/towards-formula-1-analysis/analyzing-formula-1-data-using-python-2021-abu-dhabi-gp-minisector-comparison-3d72aa39e5e8
 
 # TODO:
-# Add title
 # Use real pilot colors
 # Plot minisectors numbers/lines
 # Plot mean speed for each driver
-# Cleean code
+# Clean code
 
 class LapDominance:
 
@@ -187,13 +186,14 @@ class LapDominance:
 
         unique_drivers = telemetry['Fastest_driver'].unique().tolist()
 
-        cmap = cm.get_cmap('winter', len(unique_drivers))
+        cmap = (cm.colors.ListedColormap(self.__get_drivers_color(unique_drivers)).with_extremes(over='0.25', under='0.75'))
         lc_comp = LineCollection(segments, norm=plt.Normalize(1, cmap.N+1), cmap=cmap)
         lc_comp.set_array(fastest_driver_array)
         lc_comp.set_linewidth(1)
         plt.gca().add_collection(lc_comp)
         plt.axis('equal')
         plt.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
+        print(unique_drivers)
         cbar = plt.colorbar(mappable=lc_comp, boundaries=np.arange(1, len(unique_drivers) + 2))
         cbar.set_ticks(np.arange(1.5, len(unique_drivers) + 1.5))
         plt.grid(False)
@@ -202,6 +202,17 @@ class LapDominance:
         self.__plot_title(self.__SESSION)
         plt.show()
         return
+    
+    def __get_drivers_color(self, driver_list):
+        """Get a list of color for a given list of driver
+
+        Keyword arguments:
+        driver_list   -- List of drivers names
+        """
+        colors = []
+        for pilot in driver_list:
+            colors.append(fastf1.plotting.driver_color(pilot))
+        return colors
     
     def __set_tick_label(self, telemetry: fastf1.core.Telemetry, cbar: plt.colorbar):
         """Set ticklabel for the given colorbar
