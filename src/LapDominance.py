@@ -20,7 +20,7 @@ fastf1.plotting.setup_mpl()
 
 class LapDominance:
 
-    __MINISECTORS = 25
+    __MINISECTORS = 3
     __SESSION = None
     __DOMINANCE_DICT = None
 
@@ -160,7 +160,6 @@ class LapDominance:
         points = np.array([x, y]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
         fastest_driver_array = telemetry['Fastest_driver_int'].to_numpy().astype(float)
-
         unique_drivers = telemetry['Fastest_driver'].unique().tolist()
 
         cmap = (cm.colors.ListedColormap(Utils.get_drivers_color(unique_drivers)).with_extremes(over='0.25', under='0.75'))
@@ -176,6 +175,7 @@ class LapDominance:
         plt.axis('off')
         self.__set_tick_label(telemetry, cbar)
         self.__plot_title(self.__SESSION)
+        plt.arrow(x=points[0][0][0], y=points[0][0][1], dx=points[10][0][0] - points[0][0][0], dy=points[10][0][1] - points[0][0][1], facecolor='white', edgecolor='white', width=50, zorder=3)
         plt.show()
         return
     
