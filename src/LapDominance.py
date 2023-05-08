@@ -14,15 +14,20 @@ fastf1.plotting.setup_mpl()
 
 # see https://medium.com/towards-formula-1-analysis/analyzing-formula-1-data-using-python-2021-abu-dhabi-gp-minisector-comparison-3d72aa39e5e8
 
-# TODO:
-# Plot start direction
-# Clean code
-
 class LapDominance:
 
     __MINISECTORS = 3
     __SESSION = None
     __DOMINANCE_DICT = None
+    __COLUMN_NAME_DISTANCE = 'Distance'
+    __COLUMN_NAME_MINISECTOR = 'Minisector'
+    __COLUMN_NAME_DRIVER = 'Driver'
+    __COLUMN_NAME_SPEED = 'Speed'
+    __COLUMN_NAME_FASTEST_DRIVER = 'Fastest_driver'
+    __COLUMN_NAME_FASTEST_DRIVER_INT = 'Fastest_driver_int'
+    __ARROW_EDGE_COLOR = 'white'
+    __ARROW_FACE_COLOR = 'white'
+    __ARROW_WIDTH = 50
 
     def plot(self, session: fastf1.core.Session):
         """Plot the lap dominance by minisectors based on all pilots in the given session
@@ -68,7 +73,7 @@ class LapDominance:
         for lap in laps_list:
             tmp_fastest=lap.get_telemetry().add_distance()
             #adding driver to field to the telemetry
-            tmp_fastest['Driver'] = lap['Driver']
+            tmp_fastest[self.__COLUMN_NAME_DRIVER] = lap[self.__COLUMN_NAME_DRIVER]
             tmp_fastest['Driver_num'] = lap['DriverNumber']
             laps_telemetry.append(tmp_fastest)
         return laps_telemetry
@@ -86,32 +91,23 @@ class LapDominance:
     
     def __create_minisectors(self, telemetry: fastf1.core.Telemetry):
         """Create and assign minisectors for each row in the given fastf1.core.Telemetry DataFrame
-        The number of miniseectors is defined by MINISECTORS
+        The number of minisectors is defined by MINISECTORS
 
         Keyword arguments:
         telemetry  -- Telemetry DataFrame for which you want to assign minisectors
         """
-        total_distance = max(telemetry['Distance'])
+        total_distance = max(telemetry[self.__COLUMN_NAME_DISTANCE])
         minisector_length = total_distance / self.__MINISECTORS
         minisectors = [0]
         #list of all the distance at which a minisector starts
         for i in range(0, (self.__MINISECTORS - 1)):
             minisectors.append(minisector_length * (i + 1))
-        """
-        #assign minisector for each row in telemetry dataframe
-        telemetry['Minisector'] = telemetry['Distance'].apply(
-            lambda dist: (
-                int((dist // minisector_length) + 1)
-            )
-        )
-        """
-        telemetry['Minisector'] =  telemetry['Distance'].apply(
+        telemetry[self.__COLUMN_NAME_MINISECTOR] =  telemetry[self.__COLUMN_NAME_DISTANCE].apply(
             lambda z: (
                 minisectors.index(
                 min(minisectors, key=lambda x: abs(x-z)))+1
             )
         )
-
         return telemetry
     
     def __get_fastest_driver_by_minisector(self, telemetry: fastf1.core.Telemetry):
@@ -121,17 +117,17 @@ class LapDominance:
         telemetry  -- Telemetry DataFrame for which you want to get the fastest driver by mini sector
         """
         #calculate average speed per driver per minisector
-        average_speed = telemetry.groupby(['Minisector', 'Driver', 'Driver_num'])['Speed'].mean().reset_index()
+        average_speed = telemetry.groupby([self.__COLUMN_NAME_MINISECTOR, self.__COLUMN_NAME_DRIVER, 'Driver_num'])[self.__COLUMN_NAME_SPEED].mean().reset_index()
         #select the fastest driver for each minisector
-        fastest_driver = average_speed.loc[average_speed.groupby(['Minisector'])['Speed'].idxmax()]
+        fastest_driver = average_speed.loc[average_speed.groupby([self.__COLUMN_NAME_MINISECTOR])[self.__COLUMN_NAME_SPEED].idxmax()]
         #stock dominance in dict
-        self.__DOMINANCE_DICT = Counter(fastest_driver["Driver"])
+        self.__DOMINANCE_DICT = Counter(fastest_driver[self.__COLUMN_NAME_DRIVER])
         # Get rid of the speed column and rename the driver column
-        fastest_driver = fastest_driver[['Minisector', 'Driver', 'Driver_num']].rename(columns={'Driver': 'Fastest_driver', 'Driver_num': 'Fastest_driver_num'})
+        fastest_driver = fastest_driver[[self.__COLUMN_NAME_MINISECTOR, self.__COLUMN_NAME_DRIVER, 'Driver_num']].rename(columns={self.__COLUMN_NAME_DRIVER: self.__COLUMN_NAME_FASTEST_DRIVER, 'Driver_num': 'Fastest_driver_num'})
         # Join the fastest driver per minisector with the full telemetry
-        telemetry = telemetry.merge(fastest_driver, on=['Minisector'])
+        telemetry = telemetry.merge(fastest_driver, on=[self.__COLUMN_NAME_MINISECTOR])
         # Order the data by distance to make matploblib does not get confused
-        telemetry = telemetry.sort_values(by=['Distance'])
+        telemetry = telemetry.sort_values(by=[self.__COLUMN_NAME_DISTANCE])
         # Set an int for each driver. Will be used to plot fig at the end
         telemetry = self.__set_fastest_driver_int(telemetry)
         return telemetry
@@ -142,9 +138,9 @@ class LapDominance:
         Keyword arguments:
         telemetry  -- Telemetry DataFrame for which you want to set a unique integers for each fastest driver per minisector
         """
-        unique_fasest_driver = telemetry['Fastest_driver'].unique().tolist()
+        unique_fasest_driver = telemetry[self.__COLUMN_NAME_FASTEST_DRIVER].unique().tolist()
         for i in range(0, len(unique_fasest_driver), 1):
-            telemetry.loc[telemetry['Fastest_driver'] == unique_fasest_driver[i], 'Fastest_driver_int'] = i + 1
+            telemetry.loc[telemetry[self.__COLUMN_NAME_FASTEST_DRIVER] == unique_fasest_driver[i], self.__COLUMN_NAME_FASTEST_DRIVER_INT] = i + 1
         return telemetry
 
     def __plot_fastest_driver_by_minisector(self, telemetry: fastf1.core.Telemetry):
@@ -159,9 +155,8 @@ class LapDominance:
 
         points = np.array([x, y]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
-        fastest_driver_array = telemetry['Fastest_driver_int'].to_numpy().astype(float)
-        unique_drivers = telemetry['Fastest_driver'].unique().tolist()
-
+        fastest_driver_array = telemetry[self.__COLUMN_NAME_FASTEST_DRIVER_INT].to_numpy().astype(float)
+        unique_drivers = telemetry[self.__COLUMN_NAME_FASTEST_DRIVER].unique().tolist()
         cmap = (cm.colors.ListedColormap(Utils.get_drivers_color(unique_drivers)).with_extremes(over='0.25', under='0.75'))
         lc_comp = LineCollection(segments, norm=plt.Normalize(1, cmap.N+1), cmap=cmap)
         lc_comp.set_array(fastest_driver_array)
@@ -175,7 +170,7 @@ class LapDominance:
         plt.axis('off')
         self.__set_tick_label(telemetry, cbar)
         self.__plot_title(self.__SESSION)
-        plt.arrow(x=points[0][0][0], y=points[0][0][1], dx=points[10][0][0] - points[0][0][0], dy=points[10][0][1] - points[0][0][1], facecolor='white', edgecolor='white', width=50, zorder=3)
+        plt.arrow(x=points[0][0][0], y=points[0][0][1], dx=points[10][0][0] - points[0][0][0], dy=points[10][0][1] - points[0][0][1], facecolor=self.__ARROW_FACE_COLOR, edgecolor=self.__ARROW_EDGE_COLOR, width=self.__ARROW_WIDTH, zorder=3)
         plt.show()
         return
     
@@ -187,12 +182,12 @@ class LapDominance:
         cbar        -- colorbar on which you want to set drivers names
         """
         # Get unique fastest drivers
-        unique_drivers = telemetry['Fastest_driver'].unique().tolist()
+        unique_drivers = telemetry[self.__COLUMN_NAME_FASTEST_DRIVER].unique().tolist()
         driver_dic = dict.fromkeys(unique_drivers, -1)
         # Iterate through dataframe for each unique fastest driver to get unique_fastest_driver_int
         for key in driver_dic:
-            tmp_index = (telemetry['Fastest_driver'].values == key).argmax()
-            driver_dic[key] = telemetry.iloc[tmp_index]['Fastest_driver_int']
+            tmp_index = (telemetry[self.__COLUMN_NAME_FASTEST_DRIVER].values == key).argmax()
+            driver_dic[key] = telemetry.iloc[tmp_index][self.__COLUMN_NAME_FASTEST_DRIVER_INT]
         # Sort the driver names by int
         sorted_drivers_by_int = sorted(driver_dic.items(), key = lambda x:x[1])
         # Get only drivers name in a list
