@@ -1,6 +1,5 @@
 import fastf1
 import fastf1.plotting
-import numpy as np
 from BasicTelemetry import BasicTelemetry
 from LapDominance import LapDominance
 

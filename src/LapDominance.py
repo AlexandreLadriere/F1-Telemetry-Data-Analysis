@@ -8,20 +8,21 @@ import Utils
 from matplotlib import pyplot as plt
 from matplotlib import cm
 from matplotlib.collections import LineCollection
+from collections import Counter
 
 fastf1.plotting.setup_mpl()
 
 # see https://medium.com/towards-formula-1-analysis/analyzing-formula-1-data-using-python-2021-abu-dhabi-gp-minisector-comparison-3d72aa39e5e8
 
 # TODO:
-# Plot minisectors numbers/lines
-# Plot mean speed for each driver
+# Plot start direction
 # Clean code
 
 class LapDominance:
 
-    __MINISECTORS = 20
+    __MINISECTORS = 25
     __SESSION = None
+    __DOMINANCE_DICT = None
 
     def plot(self, session: fastf1.core.Session):
         """Plot the lap dominance by minisectors based on all pilots in the given session
@@ -123,6 +124,8 @@ class LapDominance:
         average_speed = telemetry.groupby(['Minisector', 'Driver', 'Driver_num'])['Speed'].mean().reset_index()
         #select the fastest driver for each minisector
         fastest_driver = average_speed.loc[average_speed.groupby(['Minisector'])['Speed'].idxmax()]
+        #stock dominance in dict
+        self.__DOMINANCE_DICT = Counter(fastest_driver["Driver"])
         # Get rid of the speed column and rename the driver column
         fastest_driver = fastest_driver[['Minisector', 'Driver', 'Driver_num']].rename(columns={'Driver': 'Fastest_driver', 'Driver_num': 'Fastest_driver_num'})
         # Join the fastest driver per minisector with the full telemetry
@@ -153,7 +156,6 @@ class LapDominance:
         fig, ax = plt.subplots(sharex=True, sharey=True)
         x = np.array(telemetry['X'].values)
         y = np.array(telemetry['Y'].values)
-        print(telemetry)
 
         points = np.array([x, y]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
@@ -164,7 +166,7 @@ class LapDominance:
         cmap = (cm.colors.ListedColormap(Utils.get_drivers_color(unique_drivers)).with_extremes(over='0.25', under='0.75'))
         lc_comp = LineCollection(segments, norm=plt.Normalize(1, cmap.N+1), cmap=cmap)
         lc_comp.set_array(fastest_driver_array)
-        lc_comp.set_linewidth(1)
+        lc_comp.set_linewidth(2)
         plt.gca().add_collection(lc_comp)
         plt.axis('equal')
         plt.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
@@ -195,6 +197,12 @@ class LapDominance:
         sorted_drivers_by_int = sorted(driver_dic.items(), key = lambda x:x[1])
         # Get only drivers name in a list
         drivers_label_sorted = list(map(lambda x: x[0], sorted_drivers_by_int))
+        #Set dominance percentage
+        for i in range(len(drivers_label_sorted)):
+            driver = drivers_label_sorted[i]
+            dominance = (float(self.__DOMINANCE_DICT[driver]) / self.__MINISECTORS) * 100
+            drivers_label_sorted[i] = driver + ' (' + str("{:.1f}".format(dominance)) + '% of lap)'
+        #set cbar labels
         cbar.set_ticklabels(drivers_label_sorted)
         return
     
