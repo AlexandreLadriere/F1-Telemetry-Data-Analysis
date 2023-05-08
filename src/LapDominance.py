@@ -15,8 +15,8 @@ fastf1.plotting.setup_mpl()
 # see https://medium.com/towards-formula-1-analysis/analyzing-formula-1-data-using-python-2021-abu-dhabi-gp-minisector-comparison-3d72aa39e5e8
 
 class LapDominance:
-
-    __MINISECTORS = 3
+    #Performance problems. Lot of optimization needed
+    __MINISECTORS = 3 # Going over 10 does not bring good results (too much identical values)
     __SESSION = None
     __DOMINANCE_DICT = None
     __COLUMN_NAME_DISTANCE = 'Distance'
