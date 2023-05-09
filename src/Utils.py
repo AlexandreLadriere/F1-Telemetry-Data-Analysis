@@ -1,6 +1,9 @@
 import pandas
 import fastf1
 import numpy as np
+from datetime import timedelta
+
+DICT_COMPOUND = {'SOFT': 'S', 'MEDIUM': 'M', 'HARD': 'H'}
 
 def get_str_lap_time_from_timedelta(time: pandas.Timedelta):
     """Get time (m:s:ms) in str from the given pandas.Timedelta object
@@ -66,3 +69,19 @@ def get_drivers_fastest_lap(session: fastf1.core.Session, drivers: list[str]):
         fast_lap = session.laps.pick_driver(driver).pick_fastest()
         drivers_fastest_lap.append(fast_lap)
     return drivers_fastest_lap
+
+def get107Time(quali_session: fastf1.core.Session):
+    """Get the 107% time for qualification (107% time is determined from Q1)
+
+    Keyword arguments:
+    quali_session -- Qualifying session for which you want to get the 107% time
+    """
+    #get all session results
+    results = quali_session.results
+    min = results['Q1'][0]
+    for index, row in results.iterrows():
+        if row['Q1'] < min:
+            min = row['Q1']
+    min_s = min.total_seconds()
+    time_107_s = min_s * 1.07
+    return timedelta(seconds=time_107_s)
