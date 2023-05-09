@@ -2,6 +2,7 @@ import fastf1
 import fastf1.plotting
 from BasicTelemetry import BasicTelemetry
 from LapDominance import LapDominance
+from GapToBest import GapToBest
 
 fastf1.Cache.enable_cache('./cache')
 
@@ -17,6 +18,9 @@ BT = BasicTelemetry()
 #BT.plot_comparison(laps=[fast_perez, fast_gasly], pilots=['PER', 'GAS'], lap_name=session.event['EventName'] + ' - ' + str(session.event.year) + ' - ' + 'Qualifying')
 
 LD = LapDominance()
-LD.plot(session)
+#LD.plot(session)
 #LD.plot_comparison(session, ['LEC', 'VER', 'HAM'])
+
+GtB = GapToBest()
+GtB.plot(session)
 

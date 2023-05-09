@@ -2,6 +2,8 @@ import pandas
 import fastf1
 import numpy as np
 
+DICT_COMPOUND = {'SOFT': 'S', 'MEDIUM': 'M', 'HARD': 'H'}
+
 def get_str_lap_time_from_timedelta(time: pandas.Timedelta):
     """Get time (m:s:ms) in str from the given pandas.Timedelta object
 
@@ -66,3 +68,9 @@ def get_drivers_fastest_lap(session: fastf1.core.Session, drivers: list[str]):
         fast_lap = session.laps.pick_driver(driver).pick_fastest()
         drivers_fastest_lap.append(fast_lap)
     return drivers_fastest_lap
+
+def strfdelta(tdelta, fmt):
+    d = {"days": tdelta.days}
+    d["hours"], rem = divmod(tdelta.seconds, 3600)
+    d["minutes"], d["seconds"] = divmod(rem, 60)
+    return fmt.format(**d)
