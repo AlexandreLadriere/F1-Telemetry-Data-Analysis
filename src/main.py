@@ -3,11 +3,15 @@ import fastf1.plotting
 from BasicTelemetry import BasicTelemetry
 from LapDominance import LapDominance
 from GapToBest import GapToBest
+from TyreStrategy import TyreStrategy
 
 fastf1.Cache.enable_cache('./cache')
 
 session = fastf1.get_session(2023, 'Baku', 'Q')
 session.load()
+session_race = fastf1.get_session(2023, 'Baku', 'R')
+session_race.load()
+
 fast_perez = session.laps.pick_driver('PER').pick_fastest()
 fast_leclerc = session.laps.pick_driver('LEC').pick_fastest()
 fast_gasly = session.laps.pick_driver('GAS').pick_fastest()
@@ -22,5 +26,8 @@ LD = LapDominance()
 #LD.plot_comparison(session, ['LEC', 'VER', 'HAM'])
 
 GtB = GapToBest()
-GtB.plot(session)
+#GtB.plot(session)
+
+TS = TyreStrategy()
+TS.plot(session_race)
 
