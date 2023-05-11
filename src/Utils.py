@@ -2,8 +2,10 @@ import pandas
 import fastf1
 import numpy as np
 from datetime import timedelta
+import matplotlib.patches as mpatches
 
 DICT_COMPOUND = {'SOFT': 'S', 'MEDIUM': 'M', 'HARD': 'H'}
+DICT_COMPOUND_COLOR = {'SOFT': 'red', 'MEDIUM': 'yellow', 'HARD': 'white', 'INTERMEDIATE': 'green', 'WEET': 'blue'}
 
 def get_str_lap_time_from_timedelta(time: pandas.Timedelta):
     """Get time (m:s:ms) in str from the given pandas.Timedelta object
@@ -85,3 +87,11 @@ def get107Time(quali_session: fastf1.core.Session):
     min_s = min.total_seconds()
     time_107_s = min_s * 1.07
     return timedelta(seconds=time_107_s)
+
+def get_compound_patches():
+    """Get the compound patches list to add as a legend
+    """
+    patches = []
+    for key, value in DICT_COMPOUND_COLOR.items():
+        patches.append(mpatches.Patch(color=value, label=key))
+    return patches
